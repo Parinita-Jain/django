@@ -2887,10 +2887,53 @@ admin part 2-- 50:16---------
 Now, the spacing is getting adjusted because 
 content space.
 
+Now,applying filters--
+
+define list_filter in the admin class.
+
+list_filter=['colname1','colname2',...]
 
 
+class ProductAdmin(admin.ModelAdmin):
+    list_display=["name","pdesc","price"]
+    list_filter=["price",]
+admin.site.register(Product,ProductAdmin)
 
+SAve the changes.
 
+refresh /admin
+
+Now on price we cant do any customization.
+
+list_display=["name","pdesc","price"]
+list_filter=["is_deleted","cat"]
+
+Now applying customized filter on admin panel.
+
+Custom filter in admin panel--
+
+1.To create customized filter, define filter class derived from,
+admin.SimpleListFilter 
+
+class MyPriceFilter(admin.SimpleListFilter):
+i.e. we arecreating our own MyPriceFilter
+title=""
+parameter_name=""
+
+def lookups(self,request,model_admin):
+	return(("labelref','label_on_admin_panel'))
+def queryset(self,request,queryset):
+	if self.value()=='labelref':
+		return queryset.filter(condition)
+
+eg.class MyPriceFilter(admin.SimpleListFilter):
+	title="Price"
+	parameter_name="By Price"
+
+	def lookups(self,request,model_admin)
+	    return(('greater','Price>5000'))
+
+1:09:49
 
 
  
