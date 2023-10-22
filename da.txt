@@ -1925,11 +1925,11 @@ editproduct.html---------
         <div class="mb-3">
             <select class="form-select" name="cat" value="" aria-label="Default select example">
                 {% if data.cat == "E" %}
-                <option selected>Electronics</option>
+                <option value="E" selected>Electronics</option>
                 {% elif data.cat == "C" %}
-                <option selected>Clothes</option>
+                <option value="C" selected>Clothes</option>
                 {% elif data.cat == "G" %}
-                <option selected>Grocery</option>
+                <option value="G" selected>Grocery</option>
                 {% endif %}
                 <option value="E">Electronics</option>
                 <option value="G">Grocery</option>
@@ -1939,6 +1939,7 @@ editproduct.html---------
         <div class="class mb-3">
             <button class="btn btn-primary" type="submit">Update product</button>
         </div>
+        
         
 
     </form>
@@ -2273,8 +2274,627 @@ def sort(request,sv):
 
 Save========refreh dashboard-------------
 
+orm manager class----------------7:51-----
+
+start xampp-->start workbench then launch server.
+
+Object Relational Mapping.
+Whatever changes we are doing in model,
+and after migration they are reflecting in
+our database, this is done by ORM.
 
 
+In models.py we havemigration class--
+class Product(models.Model):
+    name=models.CharField(max_length=50)
+    pdesc=models.CharField(max_length=100)
+    price=models.FloatField()
+    cat=models.CharField(max_length=10)
+    is_deleted=models.CharField(max_length=5)
+
+
+now, python manage.py makemigrations
+this cmd created file for migrations in migration folder.
+These changs doesnot reflect to the db table.
+And only contains file with the code,which is ready to migrate.
+
+python manage.py migrate
+this cmd run migration files in the migration folder and 
+changes will be reflected in the db.
+
+table:todoapp_product
+
+Now,in editor delete func of views.py--
+
+rec is receiving the object fromthe table.
+
+1.classname in model=tablename in db
+egStudent-- todoapp_student
+
+2. data memeber of modl class = cols in db
+
+3. obj of modelclass=record or row or tuple in db
+
+Advantage of this mapping is--- since it is mapped,
+changs done inthe model gets reflected in the db table.
+
+ORM provides small methods with the help of which 
+we can perform sql queries on the table.
+create(),save()--for inserting
+all()-- to retrieve all records
+get()-- to retrieve particular record.
+filter()-- similar to where clause.
+order_by() -- sort records
+delete()-- to remove record
+update()-- to update record.
+
+behind these functions, orm is handling sql query.
+
+Manager class and obj of manager class---
+
+Django model --->manager class--->db table
+
+mnager class is an interface or middleman between
+django model and db table who is responsible for
+reflecting changes in the db table given by django model.
+
+Now, tis manager class is present inside models module.
+
+this we have written inside models.py
+
+objects---
+objects is a default object.
+Now if we want to use objects name somewhere
+in our project then it will create a confusion.
+
+So,in that case we will chnge the name ofthe 
+default class manager.
+
+So, changing name of the default calss manager object--
+by creating obj of class Manager in model  
+class Student(models.Model):
+	Data members
+	object_name=models.Manager()
+
+So going to models.py----
+
+
+    cat=models.CharField(max_length=10)
+    is_deleted=models.CharField(max_length=5)
+
+    obj1=models.Manager() # changing name of the default obj of manager class
+
+
+Now, what will happen if we will try to insert data?
+So, from views.py-- in edit func we have used objects,
+So, we need to change tis objects to obj1.
+
+On refreshing only we are getting error, products as no attribute objects.
+
+from django.shortcuts import render,redirect
+from todoapp.models import Product
+
+from django.http import HttpResponse
+from django.db.models import Q
+
+# Create your views here.
+def index(request):
+    #return HttpResponse("<b>Hello from index</b>")
+    return redirect("/index")
+
+def home(request):
+    content={}
+    #content["x"]="Itvedant"
+    #content["x"]=500
+    #content["y"]=100
+    content["data"]=[10,20,30,40,50,60]
+    return render(request,"index.html",content)
+
+
+def contact(request):
+    return render(request,"contact.html")
+
+
+def product(request):
+    return render(request,"product.html")
+
+
+def dash_product(request):
+    if request.method=="POST":
+        # retrieve data sent from form into python variable and store in database.
+        pname=request.POST["pname"]
+        desc=request.POST["pdesc"]
+        price=request.POST["pprice"]
+        cat=request.POST["cat"]
+        #print(pname,desc,price,cat)
+        p1=Product(name=pname,pdesc=desc,price=price,cat=cat,is_deleted="N")
+        print(p1)
+        p1.save()
+        return redirect("/pdashboard")
+    else:
+        #show empty form
+        #records=Product.objects.all()
+        records=Product.obj1.filter(is_deleted="N")
+        #print(records)
+        content={}
+        content['data']=records
+        return render(request,"product_dashboard.html",content)
+
+def edit(request,rid):
+    #str1="Hello from edit function "
+    #print(rid)
+    #return HttpResponse("ID to be edited"+rid)
+    if request.method=="POST":
+        
+        upname=request.POST["pname"]
+        updesc=request.POST["pdesc"]
+        uprice=request.POST["pprice"]
+        ucat=request.POST["cat"]
+        x=Product.obj1.filter(id=rid)
+        x.update(name=upname,pdesc=updesc,price=uprice,cat=ucat)
+        return redirect('/pdashboard')
+    else:
+
+        records=Product.obj1.get(id=rid)
+        #print(rec)
+        c={}
+        c["data"]=records
+        print(c["data"])
+        return render(request,"editproduct.html",c)
+
+
+def delete(request,rid):
+    # hard del
+    #x=Product.objects.get(id=rid)
+    #x.delete()
+
+    # soft del,we need to convert is_deleted value n to y.
+    x=Product.obj1.filter(id=rid)
+    x.update(is_deleted="Y")
+    return redirect('/pdashboard')
+'''
+def filter_electronics(request):
+    q1=Q(cat="E")
+    q2=Q(is_deleted="N")
+    # then we will use these conditions for filter.
+    rec=Product.objects.filter(q1 & q2)
+    content={}
+    content['data']=rec
+    return render(request,"product_dashboard.html",content)
+
+
+def filter_grocery(request):
+    q1=Q(cat="G")
+    q2=Q(is_deleted="N")
+    # then we will use these conditions for filter.
+    rec=Product.objects.filter(q1 & q2)
+    content={}
+    content['data']=rec
+    return render(request,"product_dashboard.html",content)
+
+def filter_cloths(request):
+    q1=Q(cat="C")
+    q2=Q(is_deleted="N")
+    # then we will use these conditions for filter.
+    rec=Product.objects.filter(q1 & q2)
+    content={}
+    content['data']=rec
+    return render(request,"product_dashboard.html",content)
+'''
+
+def filter(request,vcat):
+    if vcat == "elec":
+        f="E"
+    elif vcat == "groc":
+        f="G"
+    elif vcat == "cloths":
+        f="C"
+    q1=Q(cat=f)
+    q2=Q(is_deleted="N")
+    # then we will use these conditions for filter.
+    rec=Product.obj1.filter(q1 & q2)
+    content={}
+    content['data']=rec
+    return render(request,"product_dashboard.html",content)
+
+def pfilter(request,p):
+    if p == ">10000":
+        q1=Q(price__gt=10000)
+    elif p == "<10000":
+        q1=Q(price__lt=10000)
+
+    q2=Q(is_deleted="N")
+    # then we will use these conditions for filter.
+    rec=Product.obj1.filter(q1 & q2)
+    content={}
+    content['data']=rec
+    return render(request,"product_dashboard.html",content)
+
+def sort(request,sv):
+    if sv == "ltoh":
+        #rec=Product.objects.order_by("price")
+        rec=Product.obj1.filter(is_deleted="N").order_by("price")
+    elif sv == "htol":
+        #rec=Product.objects.order_by("-price")
+        rec=Product.obj1.filter(is_deleted="N").order_by("-price")
+    content={}
+    content['data']=rec
+    return render(request,"product_dashboard.html",content)
+
+Now, refresh dashboard and edit some info.
+
+Now, as per our eg,objects or obj1 are the objects of
+Manager class. The manager class contains, methods such as all(),
+get(),filter(),etc
+
+Now, if I wnt to create my own method,i.e.
+creating customized method in manager class--
+
+1, create manager.py file in application folder
+2, create class inherited from manager class
+3, define method in that class
+
+manager.py--
+
+from django.db import models
+
+class Customclass(models.Manager):
+	def sortfilterasc(self):
+	    return super().filter(is_deleted="N").order_by("price")
+
+ 	def sortfilterdesc(self):
+	    return super().filter(is_deleted="N").order_by("-price")
+
+super()-- it is obj of parent class.
+return stmt returns value at the place of the func or method call.
+
+above return stmt returns result set or records which satisfy
+condition to the place where sortfilterasc() and sortfilterdesc(),
+function or methods being called or invoked.
+
+So,select todoapp---->new file--
+
+from django.db import models
+
+class Customclass(models.Manager):
+    def sortfilterasc(self):
+        return super().filter(is_deleted="N").order_by("price")
+    def sortfilterdesc(self):
+        return super().filter(is_deleted="N").order_by("-price")
+
+Now, we will create an obj of Customclass.
+so,going to models.py---
+
+from django.db import models
+from todoapp.manager import Customclass
+# Create your models here.
+
+class Product(models.Model):
+    name=models.CharField(max_length=50)
+    pdesc=models.CharField(max_length=100)
+    price=models.FloatField()
+    cat=models.CharField(max_length=10)
+    is_deleted=models.CharField(max_length=5)
+
+    obj1=models.Manager() # changing name of the default obj of manager class
+    cobj1=Customclass()
+
+
+
+Now goto views.py----
+
+
+def sort(request,sv):
+    if sv == "ltoh":
+        #rec=Product.objects.order_by("price")
+        #rec=Product.obj1.filter(is_deleted="N").order_by("price")
+        rec=Product.cobj1.sortfilterasc()
+    elif sv == "htol":
+        #rec=Product.objects.order_by("-price")
+        #rec=Product.obj1.filter(is_deleted="N").order_by("-price")
+        rec=Product.cobj1.sortfilterdesc()
+    content={}
+
+Now,going to dashboard, refresh-- see high to low,low to high
+
+Admin----
+
+Web application roles--
+
+1. User -- it has limited rights.
+2. Admin -- has all the rights on the web application.
+
+so product_dashboard.html------------------------------------
+
+{% extends 'base.html' %}
+{% block 'main' %}
+
+<div class="col-md-12">
+  <h3>Product Admin Panel</h3>
+  <hr>
+</div>
+
+in bootstrap--->utilities---tecxt color--- or u can directly write-- or
+
+{% extends 'base.html' %}
+{% block 'main' %}
+
+<div class="col-md-12 mt-5">
+  <h3 class="text-danger">Product Admin Panel</h3>---------for red color
+  <hr>
+</div>
+
+Now admin is nothing but a super user.
+
+In todo-->todo-->urls.py--->we see the admin appname.
+And in settings.py--we register our admin app, 
+So,this is an inbuilt app in django, that gives inbuilt admin panel.
+
+So, django.contrib.admin------it is a preinstalled application given by django,
+that gives ready made admin panel for the application, thus saving time to create
+admin panel from scratch.
+
+url.py file in the project flder has a url to access admin panel.
+
+path('admin/',admin.site.urls) all the urls are ther in admin url.
+
+Simply write http://127.0.0.1:8000/admin on dashboard--- and u will get admin panel.
+
+but we donot know username and password.So we need to create one.
+
+So, superuser or admin--
+In order to access admin panel there is need to create superuser.
+
+In terminal,create superuser.
+
+cmd to create superuser---
+
+python manage.py createsuperuser
+
+email:parinita@itvedant.com
+username:parinita
+Enter password:redhat123@
+re-type password:redhat123@
+
+So do ctrl+c from terminal-- and give above cmd.
+
+(env) PS C:\Users\itvedant\Documents\Django\todo> python manage.py createsuperuser
+Username (leave blank to use 'itvedant'): parinita
+Email address: parinita@itvedant.com
+Password: 
+Password (again):
+Superuser created successfully.
+(env) PS C:\Users\itvedant\Documents\Django\todo> 
+
+NOw that we have createdsuperuser, we can login through that.
+
+login and u will get admin panel.
+
+Now table is nothing but model.
+
+do-- show tables; -----in workbench or u can start xampp--start apache--admin--ecomm--
+and see the tables--
+
+now, auth_user is an imp table that we will be looking alot.
+
+
+
+Open auth_user and see--
+
+admin--part1---24:00
+
+start phpmyadmin from xampp--->admin--->
+ecomm---> or from workbench u can do show tables;
+
+Click on auth_user--- this table keeps a track of user which is created.
+recently, we created 1 user- info regarding that is present here.
+thereis another table,auth_group-- there can be groups like marketing group,
+operations,hr, etc.
+Now,if we will see in our dashboard,there is users and groups.
+Now,users is the model available to the admin. 
+
+So,on dashboard-->click on (user)change---now u can see the user we created.
+
+Now,there are ceratin filters available on this page.
+
+by staff status-- whether this user is added a staff or not.
+by superuser status-- this field u can check in phpmyadmin also 
+by active-- whther this user is active or deleted.
+
+So, now lets say creating a user--through dashboard-- add user--
+
+username-- firstuser123
+pwd-- Pa$$word@20 --- save---
+
+in the next page,we got some check boxes.-- save
+
+Now,goto phpmyadmin-- refresh--the added user reflected 
+over here.
+
+now,in dashboard i.e.http://127.0.0.1:8000/admin/auth/user/
+now if i want to edit--- clickon the username-- i.efirstuser123
+fn-- first
+ln-- user
+email-- firstuser@gmail.com
+
+click on staff status.
+
+Now,scrolling down, diferent permissions we see in authorizaion.
+-- save
+
+now, refresh phpmyadmin-- changes will reflect--
+Now,in phpmyadmin,is_staff willbe changed to 1
+
+algorithms like md5,sha,etc are used for hashing.
+
+Now,if we want to deactivate this user--
+
+Now,in dashboard --click logout--
+now login with the user we have created.
+un-- firstuser123
+pwd--Pa$$word@20
+
+--o/p u dont have permission to view or edit anything.
+
+Now admin has permission which simple user doesnt have.
+
+
+now login as admin--
+
+user-- parinita
+pwd-- redhat123@
+
++ means addition , other one is editing.
+
+Now,going to phpmyadmin-- is_active 1,0 means deleted
+if we will untick active from user, So instead of delelting a
+user account, simply untickactive. In such case user will be 
+visible to admin,but user's account will get inactivated.
+
+Now, try to edit active status of firtuser123 
+and then see.
+and refresh is_active in phpmyadmin-- its 0 now.
+
+and from admin login from dashboard,try to login 
+with firstuser123, it willnot let you.
+
+Now, if we login from backend, i.e. from phpmyadmin,
+do is_active=1.,and refresh and see.
+
+admin part 2---------------------------
+
+Now goto admin part. login as admin.
+
+we can see groups and users model which are by default.
+
+Now we will see how we can add our own model which will be visible over here.
+
+See,the dashboard--pdashboard---
+
+in /admin --we should get a provision to add,edit,delete our product.
+This is the same thing which we can do from dashboard. And now we are ddoing from admin panel.
+
+Now,wewant toadd or register ourmodel todjango adminpanel.
+steps1. open admin.py file from application folder.
+So,todoapp-->admin.py
+2. import the model which needs to be register in admin file.
+Now, this model we have defined in model.py file.So we will 
+import this file.i.e. import class into admin.py file.
+
+admin.py
+
+from django.contrib import admin
+from todoapp.models import Product---- note in models.py we have class Product
+# Register your models here.
+3.Now, syntax for registering a model--
+admin.site.register(modelname)
+
+register model in admin.py file as follows-
+
+from django.contrib import admin
+from todoapp.models import Product
+# Register your models here.
+admin.site.register(Product)
+
+So,now go and refresh admin-- u will see Products coming.
+
+Now, when we will click on this, we will get some objects,
+which are rows in the table.
+
+So,now we got a provision to add product from here as well.
+
+So,on clicking on the object, we will get its info.
+
+lets say adding product--admin/
+
+cat-E,is_deleted-N
+
+dashboard/-- refresh-- added product reflected.
+
+Now, delete from admin is hard_delete.
+
+Next task is changing default name of tuplesin adminpanel.
+which is Product object().
+i.e. modelclassname object(number)
+but this is not user friendly. We want the actual product name.
+like in dashboard or backend.
+
+steps-- 1.open models.py--
+2.define __str__(self) function in the model class.
+and the col name which u want to show return that.
+
+models.py
+class Product(models.Model):
+	def __str__(self):
+	    return self.col_name
+
+
+class Product(models.Model):
+    name=models.CharField(max_length=50)
+    pdesc=models.CharField(max_length=100)
+    price=models.FloatField()
+    cat=models.CharField(max_length=10)
+    is_deleted=models.CharField(max_length=5)
+
+    obj1=models.Manager() # changing name of the default obj of manager class
+    cobj1=Customclass() # custom class obj
+
+    def __str__(self):---------------- changes
+        return self.name
+
+refresh /admin--------
+
+Now,display all fields on admin panel--
+i.e. we want entire table.
+
+Now, like in manager.py we declaredee Customerclass,
+which inherited from manager class.
+
+lly, in admin, we need customization,so we will create an admin class.
+
+1. define admin class which is derived from admin.ModelAdmin class.
+class ProductAdmin(admin.ModelAdmin):
+
+2. the name list_display=[col_names] is fixed.
+i.e. list_display=["name",....]
+or instead of list we can define tuple.
+
+list_display=(colnames,...)
+
+3.register model and modeladmin class with admin.
+
+admin.site.register(modelname,modeladminclassname)
+
+
+admin.py----
+
+from django.contrib import admin
+from todoapp.models import Product
+# Register your models here.
+# admin.site.register(Product)
+
+class ProductAdmin(admin.ModelAdmin):
+    list_display=["id","name","pdesc","price"]
+admin.site.register(Product,ProductAdmin)
+
+
+SAve all-- refresh /admin
+
+
+then ,u can remove id from list_display.
+
+admin part 2-- 50:16---------
+Now, the spacing is getting adjusted because 
+content space.
+
+
+
+
+
+
+
+ 
+ 
 
 
 
