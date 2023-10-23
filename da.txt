@@ -3247,7 +3247,7 @@ def empform(request):
         return render(request,"formapi.html",{'form':efm})---- form is a key and efm is a value. Instead of creating content dict, we arepassing it deirectly.
 
 
-formapi.html---- we are going to access this key.
+formapi.html---- we are going to access this key.--- without form dict see the page source andthen with dict.
 
 </head>
 <body>
@@ -3258,10 +3258,100 @@ formapi.html---- we are going to access this key.
 
 http://127.0.0.1:8000/formapi---- refresh--- we are getting fields.
 
+Now,in forms.py-- instead of sal, if we will do-- salary=forms.FloatField(),then in dashboard, instead of sal,salary will be displayed.
+
+by view page source,u can see the coding behind once objects is passed. This coding is given by django.
+i.e. django framework helped  us here by generating the code of the form object.
+
+
+now,after doing page source,we can see,
+how we can brring itone below another,
+<tr> is there and no table tag is there.
+there is no submit button, there is no form tag.
+
+view.py--
+
+    <title>Form API</title>
+</head>
+<body>
+    <h2>Using Form API</h2>
+    <table>
+        {{form}}
+    </table>
+</body>
+</html>
+
+http://127.0.0.1:8000/formapi-- refresh.
+formapi.html---
+
+</head>
+<body>
+    <h2>Using Form API</h2>
+    <form method="POST"> 
+        {% csrf_token %}
+        <table>
+            {{form}}
+            <tr>
+                <td><input type="submit" value="send"></td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>
+
+http://127.0.0.1:8000/formapi-- refresh
+
+Now,since we have not given any action,it
+will submit to thesame url. 
+
+So,in views.py , if section---
+
+make changes in dash_product function--
+
+p1=Product.objects.create(name=pname,pdesc=desc,price=price,cat=cat,is_deleted="N")--
+-- now here in this func we retrieved the value, created an object and saved the work.
+print(p1)
+
+
+
+Same thing,we can do in empform--
+
+but here we donot have to retrieve any info,
+create any object , only we will have to save.
+
+#formapi view function
+def empform(request):
+    if request.method=="POST":
+        #n=request.POST['name']
+        #s=request.POST['salary']
+        #c=request.POST['city']
+        return HttpResponse("In  the POST Section")
+    else:
+        efm=EmpForm()
+        return render(request,"formapi.html",{'form':efm})
+
+
+so step4is to import class in the views.py file.
+step 5 : create object of that class.
+6. pass that object tothe html template
+
+Now,in authorization and authentication ,we are going to repeat this sameprocess here.
+
+Now,using ModelForms---
+
+in models.py we have a product model-- the data members created here are reflected 
+as fields only.
+
+So in forms.py only-----
+
+class ProductForm(forms.ModelForm):
+    name=forms.CharField(max_length=50)
+    pdesc=forms.CharField(max_length=100)
+    price=forms.FloatField()
+
+Now, in views.py------
+
  
-
-
-
 
 
 
