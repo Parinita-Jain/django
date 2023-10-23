@@ -2926,18 +2926,341 @@ def queryset(self,request,queryset):
 	if self.value()=='labelref':
 		return queryset.filter(condition)
 
+So, above isour structure. Now how we are going touse it for price?-- 
+And we will do method overriding of lookups.
+
 eg.class MyPriceFilter(admin.SimpleListFilter):
 	title="Price"
 	parameter_name="By Price"
 
-	def lookups(self,request,model_admin)
+	def lookups(self,request,model_admin):
 	    return(('greater','Price>5000'))
 
-1:09:49
+labeled ref means--refered frominside like greater.
+The Price>5000 will appear which is internally defined as greater.
+Wehave given this in tuple.
+So first we will seethis filter only and then we will edit more.
+the,queryset func-- so whenever we click on something,a query is fired
+and internal filtering is done, So same thing-- i.e. 
+when price>5000 is clicked, self.value will be equal to greater. 
+	def queryset(self,request,queryset):
+	    if self.value()=="greater":
+		return queryset.filter(price__gt=5000)
+	    else:
+		return queryset.all()
+
+paste abovecodein admin.py above ProductAdmin class.
+ 
+
+class MyPriceFilter(admin.SimpleListFilter):----------------------------
+	title="Price" ------------------------------------------- this is what is displayed
+	parameter_name="By Price"-------------------------------- this is used internally.
+	def lookups(self, request, model_admin):
+		return (("greater","Price>5000"))
+	def queryset(self,request,queryset):
+		if self.value()=="greater":
+			return (("greater","Price>5000"),("lesser","Price<5000")))----  this method requires atleast 2 values to be returned.
+		else:
+			return queryset.all()
+			
+	
+		
+class ProductAdmin(admin.ModelAdmin):
+    list_display=["name","pdesc","price"]
+    list_filter=["is_deleted","cat"]
+
+Now, if we want to get this filter visible,write the name of this class in list_filter.
+Donot put in double quotes. So,
 
 
+#defining customer filter
+
+class MyPriceFilter(admin.SimpleListFilter):
+	title="price"
+	parameter_name="By Price"
+	def lookups(self, request, model_admin):
+		return (("greater","Price>5000"),("lesser","Price<5000"))
+	def queryset(self,request,queryset):
+		if self.value()=="greater":
+			return queryset.filter(price__gt=5000)
+		elif self.value()=="lesser":
+			return queryset.filter(price__lt=5000)
+			
+		else:
+			return queryset.all()
+			
+	
+		
+class ProductAdmin(admin.ModelAdmin):
+    list_display=["name","pdesc","price","is_deleted"]
+    list_filter=["is_deleted","cat",MyPriceFilter]
+
+
+Now, save everything and refresh admin.
+
+
+	def queryset(self,request,queryset):
+		if self.value()=="greater":---------------- we can also write like--
+			q1=Q(price__gt=5000)
+			q2=Q(is_deleted="N")
+			return queryset.filter(q1 & q2)
+		elif self.value()=="lesser":
+			return queryset.filter(price__lt=5000)
+			
+		else:
+			return queryset.all()
+			
  
+ ---Product filter between given price range----
+UI-- first make provisison for user to provide input fro range of price. 
+
+filter by price range--
+
+i.e from _____to_______ button
+
+in short, this will be a form with 2 i/p fields and a submit button tosubmit it.
+
+Creating form fields--
+
+templates-- product_dashboard.html--
+
+
+<div class="col-md-12">
+  <form action="">
+    <table>
+        <tr>
+          <td>From Rupees : </td>
+          <td><input type="text" name="From" class="form-control"></td>
+          <td>To Rupees : </td>
+          <td><input type="text" name="To" class="form-control"></td>
+          <td><input type="Submit" name="send" value="Find"></td>
+        </tr>  
+            
+    </table>
+  </form>
+
+
+</div>
+
+<div class="col-md-4 mt-5">
+  <h4>Filter by Category</h4>
+  <hr>
+  <p><a href="/pdashboard">All</a></p>
+  <p><a href="/filter/elec">By Electronics</a></p>
+  <p><a href="/filter/groc">By Grocery</a></p>
+  <p><a href="/filter/cloths">By Clothes</a></p>
+</div>
+
+refreshing dashboard and see--
+
+Making some changes again--
+
+<div class="col-md-12">
+  <hr>
+  <h4>Filter Between Price Range</h4>
+  <hr>
+    <form method="POST" action="">
+      {% csrf_token %}
+              <table>
+                  <tr>
+                    <td>From Rupees : </td>
+                    <td><input type="text" name="from" class="form-control"></td>
+                    <td>To Rupees : </td>
+                    <td><input type="text" name="to" class="form-control"></td>
+                    <td><input type="Submit" name="send" value="Find" class="btn btn-success"></td>
+                  </tr>  
+                      
+              </table>
+  <hr>
+    </form>
+
+
+</div>
+
+<div class="col-md-4 mt-5">
+  <h4>Filter by Category</h4>
+  <hr>
+
+
+Now, UI is completed.Creating URL for the form.
+
+
+ <hr>
+    <form method="POST" action="prange">---------------action value
+      {% csrf_token %}
+              <table>
+                  <tr>
+                    <td>From Rupees : </td>
+
+
+Now going into dashboard, if we will put some value, lets say 10000 to20000, this
+value will go into prange.
+
+So nowgoing into, todoapp--urls.py---and registering url---
+
+    path("sort/<sv>",views.sort),
+    path("prange",views.prange),-------------------------------------
+]
+
+Now, we will define prange func in views.py----
+
+#prange function
+def prange(request):
+    if request.method=="POST":
+        min=request.POST["from"]
+        max=request.POST["to"]
+        print(min,max)
+        
+
+refresh pdashboard--put values
+
+getting error regarding httpresponse object-- but in terminal we can see 100 200
+
+NOw retrieveing data coming from the forms.
+So, now we will write an ORM query to fetch records fromthe database within that price range.
+
+Model.objects.filter(condition)
+
+the condition ehere contains, price>=min and price<=max. Also is_deleted="N"
+
+Records satisfying these 3 conditions will be fetched and send to the dashboard.
+
+So views.py--
+
+
+#prange function
+def prange(request):
+    if request.method=="POST":
+        min=request.POST["from"]
+        max=request.POST["to"]
+        #print(min,max)
+        q1=Q(price__gte=min)
+        q2=Q(price__lte=max)
+        q3=Q(is_deleted="N")
+        # then we will use these conditions for filter.
+        rec=Product.obj1.filter(q1 & q2 & q3)
+    content={}
+    content['data']=rec
+    return render(request,"product_dashboard.html",content)
+
+Refresh pdashboard and see.
+
+On clicking all u will get allthe products.
+
+so,price range filter is completed.
+
+U can use some front end validation if--
+1.user tries to enter text in search range---- so,product_dashboard.html---
+
+<tr>
+                    <td>From Rupees : </td>
+                    <td><input type="number" name="from" class="form-control" required></td>------------type changed,required added
+                    <td>To Rupees : </td>
+                    <td><input type="number" name="to" class="form-control" required></td>----------------same
+                    <td><input type="Submit" name="send" value="Find" class="btn btn-success"></td>
+                  </tr>  
+
+Now, if we will try tosubmit blank fields.--- to avoid that-- use required attribute in the front end.The pop up msg will come
+if blank field gets submitted.
+
+Form api--
+
+The frameworks helps to develop our application n faster way. Like admin, registeration,etc.
+
+form api is one such thing.It is for readymade forms.
+
+There are 2 ways by which u can create a form in django. By using form api 2nd using modelforms.
+
+using form api--
+
+1.create forms.py file inthe application folder. todoapp->forms.py
+
+So,what we are actually doing is creating a class,inheriting the properties.
+
+2.import forms module from django.i.e.
+from django import forms
+
+3.define class inherited from the Form class in the forms module.
+class EmpForm(forms.Form):
+	data members
+
+data members defined in the EmpForm class are field to be generated in the forms.
+
+now,object of this class we will create in views.py and then we are going to pass
+that object to the template. And template is the place where we are going to 
+display that form.
+
+from django import forms
+class EmpForm(forms.Form):
+    #data members defined in this class becomes forms field.
+    name=forms.CharField(max_length=50)
+    sal=forms.FloatField()
+    city=forms.CharField(max_length=20)
+
+Now creating object of this form.py class in views.py
+
+views.py----
+
+from todoapp.forms import EmpForm 
+
+so, when its an empty form its a get request, and filled one is POST req.
+
+#formapi view function
+def empform(request):
+    if request.method=="POST":
+        pass
+    else:
+        return render(request,"formapi.html")
+
+So,now creating a template. So,inside templates folder.Create file formapi.html
+
+So, here we are not doing any inheritance here for this project purpose. U can always do it.
+For the formapi pracical, we donot require it.But we will doit during login and authentication.
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form API</title>----------------------------------------------------------
+</head>
+<body>
+    <h2>Using Form API</h2>----------------------------------------------------------
+</body>
+</html>
+
+Now we want url for this.SO todoapp->urls.py
+
+ path("prange",views.prange),
+ path("formapi",views.empform),
+
+http://127.0.0.1:8000/formapi--- o/p-- Using Form API
+
+So now we will goto views.py---
+
+#formapi view function
+def empform(request):
+    if request.method=="POST":
+        pass
+    else:
+        efm=EmpForm()
+        return render(request,"formapi.html",{'form':efm})---- form is a key and efm is a value. Instead of creating content dict, we arepassing it deirectly.
+
+
+formapi.html---- we are going to access this key.
+
+</head>
+<body>
+    <h2>Using Form API</h2>
+    {{form}}
+</body>
+</html>
+
+http://127.0.0.1:8000/formapi---- refresh--- we are getting fields.
+
  
+
+
 
 
 
