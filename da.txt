@@ -3349,9 +3349,292 @@ class ProductForm(forms.ModelForm):
     pdesc=forms.CharField(max_length=100)
     price=forms.FloatField()
 
+So,we have taken 3 fields.
+
+Now,we are going to create object of ProductForm.
+which we will create inside views.py.
+
 Now, in views.py------
 
+from todoapp.forms import EmpForm,ProductForm
+
+Now we willcreate another function-
+
+
+def productform(request):
+    if request.method=="POST":
+        pass
+    else:
+        pfm=ProductForm()
+        return render(request,"modelformapi.html",{"mform":pfm})
+
+mform:pfm is an object.
+
+now we will create modelformapi.html---
+
+So in templates--- create--- modelformapi.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelform API</title>
+</head>
+<body>
+    {{mform}}
+</body>
+</html>
+
+
+Now, writing path in urls.py------
+
+  path("formapi",views.empform),
+  path("modelform",views.productform),
+
+http://127.0.0.1:8000/modelform-------- value error--modelform has no model class specified. So,
+
+Now,in forms.py---- Now we should must select the model from which we are going tocreate this modelform.
+
+Now,
+
+class ProductForm(forms.ModelForm):
+    name=forms.CharField(max_length=50)
+    pdesc=forms.CharField(max_length=100)
+    price=forms.FloatField()
+
+    class Meta:
+        model=Product-------------but this Product is not defined.
+
+from todoapp.models import Product
+
+class ProductForm(forms.ModelForm):
+    name=forms.CharField(max_length=50)----------------- these are the fields of the form
+    pdesc=forms.CharField(max_length=100)
+    price=forms.FloatField()
+
+    class Meta:
+        model=Product
+        fields=["name","pdesc","price"] ---------------------these are the fields which will be dispalyed
+
+http://127.0.0.1:8000/modelform----------------
+
+Now,  in display,they are on single row,so including table tag--modelformapi.html
+
+</head>
+<body>
+    <table>
+        {{mform}}
+    </table>
+    
+</body>
+</html>
+
+
+http://127.0.0.1:8000/modelform----------------
+
+But this stuff we are doing in both formapi and modelapi,the extra thing done in modelform
+is we linked model=Product decribed inside Meta class with forms.ModelForm.
+Now,because of this the formis directly linked with the model.And so this has reduced our efforts.
+We donot have towrite something like p1=Product.objects.create(....),p1.save(),etc.
  
+So just like orm, modelform is mapped.
+
+Now, we have auth_user inbuilt table present in our db.We will use that during login and auth
+along with modelform .
+
+Authorization and authentication model--------
+
+In the migration folder..we have 2 files. so 2 migrations we have done i.e.created a tablein dbms.
+
+So, here we will be looking at some tables and their use.
+
+Start apache service or u will be needded to fire cmds. 
+
+See auth_user.All its columns.
+
+Go to settings.py and see , there is Installed_apps section.
+
+Now, auth_permission is related to authorization.
+
+Providing permission touser based on his role.
+1. insert into table
+2.update
+3.view
+4.delete 
+these permissions need tobe set for eaach and revery
+table to restrict the user's actions on particular table.
+
+So, auth permmission has col has user id,
+permission name,content type id we will discuss,  codename for the content.
+
+Now, see around 50 rows. Different permissions on product 
+are written there.To add the product id is  25,ly ids,26,27 .
+These different id number is very imp.
+Because these ids are stored in other tables.
+
+andif u see,phpmyadmin-->django_content type--
+app_label and models are the perissions.
+These are all internal things. So whatever model we create,
+that gets addedinto this table.
+Now, todoapp_product has id 7.,which is used
+in the  auth_permission 
+
+Now,when we give permission to the user, that is given on the 
+auth_user_user_permission
+
+Authorization -- 2 types-- singleuser and group permission.
+
+for user permission-- tables or models tolook for are--
+1. auth_user,2.auth_permission,3. auth_user_user_permission
+
+now,auth_user_userr is empty.
+
+Those who are doing with workbench,do select * from these tables.
+
+Now we willlogin into admin connection with admin panel.
+
+goon user table.--http://127.0.0.1:8000/admin/auth/user/
+
+Now click on theuser to whomu want to give permission.
+Check idf active or not otherwise mk it active.
+
+Scroll down ,come to users permission.
+
+Now,if we login with this firstuser, then it shows,it doesnt 
+have any permission.
+but if u login as superuser,then u will be able to see different 
+permissions/
+
+So in user perm, click on todoapp|product|can view product---click 
+on it and move by arrow.
+
+Save the chnages. Once u save it,
+u will see the reflectionof the changes,
+in auth_user_user_permissions.
+
+Nowin aut_permission,the id for view is 28.
+
+and in aut_user id is 2.
+
+So auth_user_user_perm we will see user id 2 and permission id28.
+and normal id is the idof the table,
+
+Now,logout and login as firstuser123.U can view the table.
+
+Now,if u wull click on any product, u r not getting any option to
+edit,delete.
+
+Now, logout again. Add an update permission and see the changes.
+
+So now we wil be looking into groups. Sologin as admin.
+Goto users. Now why there is a need of group?--its advantageous
+when departments arethere.
+
+First removing permissions of firstuser.Save it and create 1 more user.
+
+seconduser123
+Pa$$word@20
+
+Now this entry canbe seen in auth_user.
+Now we need to create a group first. For each user u will get a group name
+populated in this group section.
+
+let's say group name as marketing--permission--view the product,add product.--save
+
+Now goto auth_group--marketing is there.
+
+auth_group_permission_id--- 
+
+open  4 tables--auth_user,auth_user_permission,auth_group-permission,group,user_group
+
+So, we will see how the records are getting inserted with the ids.
+
+So,once i create a group-- the tables that are changing are--
+
+auth_user-no,
+auth_group- yes- id 1 name marketing.-- so auth_group maintains entires of the group that are created.
+now permission id for view product and add product are--25 and 28
+auth_group_permissions--groupid-1 25 28
+
+Now we will add user to a group.So now open auth_user_user_permissions--no permissions becuse we removed.
+http://127.0.0.1:8000/admin/auth/user/
+now, click on user--- firstuser123---scroll down -- groups is automatically populated with marketing--
+now, clik on marketing--choose.
+
+So now,instead of selecting permissions individually,we cn select 1 group and give permission to user.
+
+Now, if we will click save then--2 tables are goingto be affected. authusergroup--user id1 group id 1
+
+aut_user_user_per is for single user permisiions.
+
+Soifwe logout and login as firstuser, we will see add and view product permissions.
+
+So this was about autherizatoin. Now authentication---
+
+User form creation--
+
+Validating whether its an authenticated user or not with the helpof username and pwd stored in db at the time of registration.
+It is a process of checking whether user is register or valid user or not.
+
+So before authentication,there is--
+1.registration
+2.login===>this login is doing the work of authentication.
+
+Now, frameworks areused for faster production.The validation is taken care by framework itself.
+
+1.Registration-- now model form is easy. There is an inbuild registration process.
+
+Now,there is something called as UserCreationForm class,whose object helps u to create user form directly.
+So,generally we have user name and pwd and confirm pwd.
+ 
+Now,if u see a company,hr creating an account has admin rights.And they give un and pwd which we can change later.
+
+but a company like fb gives permissions touser to register himself.
+
+so in our pdashboard, we should have another layer of login. 
+
+It is different then our earlier 2 forms since we are using a readymade form and not creating class forour forms.
+
+UserCreationForm class is present inside django.contrib.auth.forms
+
+soauth is an app where we have form.
+
+views.py---
+
+User form creation--15:02
+
+from django.contrib.auth.forms import UserCreationForm
+
+ 
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
