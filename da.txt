@@ -3606,12 +3606,291 @@ User form creation--15:02
 
 from django.contrib.auth.forms import UserCreationForm
 
- 
+Now creating a function--
+
+rfm-->register form object
+
+
+def register(request):
+    if request.method=="POST":
+        pass
+    else:
+        rfm=UserCreationForm()
+        return render(request,'register.html',{'rform':rfm})
+
+templates--new file--register.html---
+
+as we have extended base.html in product.lly,
+This is to display.
+
+{% extends "base.html" %}
+
+{% block 'main' %}
+    <div class="col-md-12">
+        <h1>Registration Form</h1>
+    </div>
+    <div class="col-md-8">
+        {{rform}}
+    </div>
+{% endblock 'main' %}
+
+todoapp>urls.py
+
+    path("modelform",views.productform),
+    path("register",views.register),
+]
+  
+
+http://127.0.0.1:8000/register-- see the by default form.
+
+Now, adding some style to h1 tag.
+
+u can do the following changes--
+
+{% block 'main' %}
+    <div class="col-md-12">
+        <h1 class="mt-5 bg-danger text-white text-center">Registration Form</h1>
+    </div>
+    <div class="col-md-8 mt-3">
+        
+        <form method="POST" action="">
+
+
+Now this form has 3 things-- label i.e. username,
+input box and kind of msg to put on box.
+
+so 3 data members of UserFormCreation object are--
+1.label
+2.input field
+3.message
+
+Now, u can deal with them seperately.
+
+So, register.html-- using for loop
+
+    <div class="col-md-8 mt-3">
+        
+        <form method="POST" action="">
+            <table>
+                {% for x in rform %}
+                    <tr>{{x}}</tr>------------ jut to see what x is printing.
+                {% endfor %}
+            </table>
+
+
+        </form>
+    </div>
+
+for loop is to access each of the 3 things in the registration form individually.
+
+i.e. something like--
+
+label_tag,input_field,error_msg
+iterations xis pointing to--
+1st iteration->username,,msg1
+2nd iteration->password,,msg2
+rd iteration->confirm pwd,,msg3
+
+Save everything and refresh and then see.
+
+  <table>
+                {% for x in rform %}
+                    <tr>
+                        <td>{{x}}</td>-------
+                    </tr>
+                {% endfor %}
+            </table>
+
+refresh and see.
+
+   {% for x in rform %}
+                    <tr>
+                        <td>{{x.label_tag}}</td>
+                        <td>{{x}}</td>
+                        <td>{{x}}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+
+refresh and see.
+
+     <table>
+                {% for x in rform %}
+                    <tr>
+                        <td>{{x.label_tag}}</td>
+                        <td>{{x}}</td>
+                        <td>{{x.errors}}</td>------this will be displayed later
+                    </tr>
+                {% endfor %}
+            </table>
+
+---
+
+{% extends "base.html" %}
+{% block 'main' %}
+    <div class="col-md-12">
+        <h1 class="mt-5 bg-danger text-white text-center">Registration Form</h1>
+    </div>
+    <div class="col-md-8 mt-3">     
+        <form method="POST" action="">
+            {% csrf_token %}
+                <table>
+                    {% for x in rform %}
+                        <tr>
+                            <td>{{x.label_tag}}</td>
+                            <td>{{x}}</td>
+                            <td>{{x.errors}}</td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <td>   
+                            <input type="submit" class="btn btn-primary" value="Register">
+                        </td>
+                    </tr>
+                </table>
+        </form>
+    </div>
+{% endblock 'main' %}
+
+
+Save and refresh..
+
+Now, lets we want to have first name,last name, email inthe registration form.
+
+For this,we willhave tocreate our own fields,which will be
+derived from our userformcreation.
+
+So,UserFormCreation i.e. form objectgives 3 fields.
+username
+password
+confirm password
+
+If there is need tohave email,firstname and lastname in
+the registration form, then there is need to create a class
+which is derived from UserFormCreation.
+
+So in forms.py---
+
+from django.contrib.auth.forms import UserCreationForm
+
+RegisterForm is derived from UserCreationForm.
+Now, since we are going to create a modelform, we
+specify the class Meta and there we specify the model.
+
+The model that we are going to specify is user, and user is an inbuilt model
+of auth_user.Which is present from before hand only .
+We just need to import it.
+
+So for importing user,there is django auth,
+From auth only we are going toimport it.
+
+Open auth user in phpmyadmin and see its fields.
+Just goto the structure tab in auth_user phpmyadmin--
+Then u will see the fields or data members or ORM of the user model.
+
+So,importing user like--forms.py--
+
+from django.contrib.auth.models import User
+
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model=User
+        fields=["username","first_name"]
+
+Now going with views.py----
+
+
+from todoapp.forms import EmpForm,ProductForm,RegisterForm
+
+This we are doing to show other fields inthe registration form.
+
+Now,in register func,instead of creating UserCreationForm, we 
+wil have RegisterForm().
+
+
+def register(request):
+    if request.method=="POST":
+        pass
+    else:
+        #rfm=UserCreationForm()
+        rfm=RegisterForm()--------------
+        return render(request,'register.html',{'rform':rfm})
+
+
+http://127.0.0.1:8000/register-------------- refresh and u will see first_name added.
+
+Now on fields add lastname and email in forms.py--
+
+class Meta:
+        model=User
+        fields=["username","first_name","last_name","email"]
+
+http://127.0.0.1:8000/register--- refresh--- dothe view page source and 
+see the keys where informationis stored, like username,first_name,last_name,password1,
+password2, etc. So,
+
+views.py---
+
+def register(request):
+    if request.method=="POST":
+        uname=request.POST["username"]
+        print(uname)
+    else:
+        #rfm=UserCreationForm()
+        rfm=RegisterForm()
+        return render(request,'register.html',{'rform':rfm})
+
+Now,in the dashboard-- fill username and pwd info.Like,
+username--thirduser123
+pwd-redhat123@
+confirm pwd- redhat123@
+
+No,need of retrieveing like this. Because this is an old method which we use to do.
+The data will be an object which we will be retrieving.
+
+fmdata is formdata.
+
+
+def register(request):
+    if request.method=="POST":
+        #uname=request.POST["username"]
+        #print(uname)
+        fmdata=RegisterForm(request.POST)
+        print(fmdata)
+    else:
+
+http://127.0.0.1:8000/register------------------ register with all the values and then see the html source code.
+
+login-register--8:00----
+
+Now we got value attributes . Previously we used to fetch the data and we used tohave create cmd.
+And then save.Now there is no need for that.
+
+Now we will do some kind of validation before saving the data.That is form data isvalid or not.
+
+views.py-- 
+if fmdata.is_valid():-- if this true that means filled data is valid.
+
+def register(request):
+    if request.method=="POST":
+        #uname=request.POST["username"]
+        #print(uname)
+        fmdata=RegisterForm(request.POST)
+        #print(fmdata)
+        if fmdata.is_valid():
+            fmdata.save()
+            return HttpResponse("User registered successfully")
+	else:
+            return HttpResponse("User not registered successfully")
+
+    else:
+        #rfm=UserCreationForm()
+        rfm=RegisterForm()
+        return render(request,'register.html',{'rform':rfm})
 
 
 
-
- 
 
 
 
