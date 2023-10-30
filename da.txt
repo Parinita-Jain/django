@@ -4078,6 +4078,217 @@ we get login window and after that we get dashboard.
 
 1:12----login-register
 
+ u=authenticate(username=uname,password=upass)
+                #print(u)
+                if u:
+                    login(request,u) # the login() starts loggedin session for that user and store id of that user in the session
+                    return redirect('/pdashboard')
+                else:----------------------------------------------------------
+                    return HttpResponse("Invalid username password.") 
+    else:
+        lfm=AuthenticationForm()
+        return render(request,"login.html",{'lform':lfm})
+
+
+Cookies----
+
+these are the part of browser.They storesome part or smll
+piece of info  which helps in serving client better.
+
+so to set cookies and tostorre infoin the cookies,amethod set_cookies()
+is used.This method is then invoked by respose object.
+
+in django architure, req is givenby the client to the django server,
+i.e.maps to URL.PY FILE and then it goes to views.
+which will call the said func and every func will have a return value.
+i.e. return render()--- which is actually a response to the client.
+i.e. render function actually generates the response object whichwe are going to use for 
+setting cookies by calling the set_cookie().
+
+i.e. along with giving response we need tosetthecookies.
+
+So,steps--1. crete response object.
+r=render(request,"abc.html")-- r is an object.
+2. using the object set cookies. So--
+r.set_cookie("key","value")
+
+so,goto url.py----
+
+    path("login",views.user_login),
+    path("setcookies",views.setcookies),
+]
+
+Now, going to views.py--
+
+        return render(request,"login.html",{'lform':lfm})
+    
+def setcookies(request):
+    r=render(request,"setcookie.html")
+    r.set_cookie('name','itvedant')
+    return r
+
+now we will create template--
+
+save all
+
+now open a new browser tab. Open the settings of the browser.
+-- search cookies---privacy and security--cookies and other site-data
+
+microsoft edge browser---
+
+cookies and site permissions
+
+Cookies and site data
+/ All cookies and site data
+
+http://127.0.0.1:8000/setcookies--- run this on new tab.
+
+Cookies and site data
+/ All cookies and site data-- in the search part--search -- localhost
+
+see in 127.0.0.1-- 1 cookie.
+
+click on name-- and u will see stored info itvedant.
+
+Now we will get the cookie. So funct for getting cookie in views.py.
+
+so,get cookies-- cookies data can be retrieved fromthe global dctionary COOKIES['key']
+
+syntax is - request.COOKIES['key']
+
+
+def getcookie(request):
+    data=request.COOKIES["name"]
+    return render(request,'getcookie.html',{'d':data})
+
+url of this path--
+
+    path("setcookies",views.setcookies),
+    path("getcookie",views.getcookie),
+]
+
+Now creating templates-- getcookie.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get cookie</title>
+</head>
+<body>
+    Data stored in key name is {{d}}
+</body>
+</html>
+
+just refresh-- http://127.0.0.1:8000/setcookies
+
+http://127.0.0.1:8000/getcookie
+
+and see the o/p.
+
+If u want more data then edit views.py---
+
+def getcookie(request):
+    data={}
+    data['n']=request.COOKIES["name"]
+    data['r']=request.COOKIES["rno"]
+    return render(request,'getcookie.html',data)
+
+now,in getcookie.html--
+
+</head>
+<body>
+    Data stored in key name is {{n}} <br>
+    Data stored in key rno is {{r}}
+</body>
+</html>
+
+http://127.0.0.1:8000/getcookie-- refresh and u will get stored cookie.
+
+session-part 1-02-11-2022
+
+Disadvantage of cookies--
+they store sensitive data like pwd or username.
+Ayone can access the cookies and get that info also 
+they can clear Cookies by accessing browser.
+It can store only small amount of data.
+
+Session--
+session stores info on the server side,that is why 
+they are more secure than cookies.
+Info stored in the session can be accessed anywhere 
+in the web application.
+On successful login function excition, session for the user 
+is started. Now whenever session is created,session id is created,
+since it is there on the server side,
+
+i.e. when client send request login to server,
+server gives response_session_id to client or browser..
+
+Now,browser stores that session id in the cookies
+and also server store tht session ideither in file or 
+in dtabase table.
+
+so,in the backend we can see- djang_session
+ either through phpmyadmin or 
+use ecomm;
+select * from django_session;
+
+django_session contains 3 cols--
+key,data,expire
+
+now as the user logsin, the session will start and 
+the id is generated which is stored in both 
+client side and server side.
+So, when the user will visit the 2nd time,
+an he gives request,so at that time, your session id will
+also go from the client side, which will be matchedd with the id
+on the server side. If the match is found,
+it bypasses the user auhenticatioin system ad directly
+show the dashboard.
+
+so now,for second request,
+
+setsession
+
+syntax--
+request.session["key"]=value
+return render(request,"abc.html")--where abc is some htmlfile.
+
+we can set time for the expiration of session by seting expiry of the table col.
+
+Soin views.py
+
+
+def setsession(request):
+    request.session["user"]="Panda"
+    return render(request,"setsession.html")
+
+Now,setting path--
+    path("getcookie",views.getcookie),
+    path("setsession",views.setsession),
+]
+
+templates---
+
+setsession.html--
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session set</title>
+</head>
+<body>
+    <h2>   Session set </h2>
+</body>
+</html>
+
+
+
+
 
 
 
