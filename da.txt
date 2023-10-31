@@ -4287,7 +4287,329 @@ setsession.html--
 </html>
 
 
+session-part-1== 29:08
 
+
+views.py----------- getsession---
+
+def setsession(request):
+    request.session["user"]="Panda"
+    return render(request,"setsession.html")
+
+
+def getsession(request):---------------------------------
+    d=request.session['user']
+    return render(request,"getsession.html",{'data':d})
+
+
+now, creating file in template--- getsession.html--
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Session</title>
+</head>
+<body>
+    Data in the session is {{data}}-- key is data,that's why.
+</body>
+</html>
+
+url.py-todoapp---
+
+path("getsession",views.getsession),
+]
+
+
+save allthe changes.
+
+http://127.0.0.1:8000/setsession
+
+http://127.0.0.1:8000/getsession
+ 
+This is how we set the session and get the session.
+
+getsession---
+get data stored in the session.
+
+variable=request.session['key']
+
+now,session id is changed for every request.
+and it is regenerated agaian and again .
+
+edge://settings/cookies/detail?site=localhost
+content contains the session id, which is supposed to be changed everytimelogin is done.
+
+login()--
+when user is authenticated , login function internally starts session
+and store id of the logged in user in the session.
+
+Now, how to access logged in user id?
+
+request.user.id-- user here is auth_user which is amodel  name,
+todoappis my application name.
+
+So,when we hit the login button,login url is goingto matched,
+which will call user-login funcion,inside the func, if u 
+is true then it will call login() and its going to call
+pdashboard.
+but now what we wantis--lets say if we have multiple admins to add the product,
+and that admin can add his own data. i.e. in the database we will have all the 
+products added by any admin, but admin will see data added by him only. 
+
+So here we need to identify which product is added by which admin.
+ soin backend-- todoapp_product---
+
+cols we have here is--
+id name pdesc price cat is_deleted
+
+Now, we will truncate this table becuse
+we need 1 more col.
+
+id name pdesc price cat is_deleted uid---
+
+lets say,im the 5th user,then see id in backend.
+and my id is 7---
+
+id name pdesc price cat is_deleted uid
+1 mobile best.. 15000 E N 5
+2 apple best.. 25000 E N 5
+3 jeans	best.. 1500 C N 7
+
+where uid tells which user it is.
+
+So,going to models.py----
+
+
+class Product(models.Model):
+    name=models.CharField(max_length=50)
+    pdesc=models.CharField(max_length=100)
+    price=models.FloatField()
+    cat=models.CharField(max_length=10)
+    is_deleted=models.CharField(max_length=5)
+    uid=models.IntegerField()------------------------
+
+Now, fromthe backend--auth_user--- edit--
+
+truncate table `todoapp_product`--go
+
+table is empty now.
+
+(env) PS C:\Users\itvedant\Documents\Django\todo> python manage.py makemigrations
+It is impossible to add a non-nullable field 'uid' to product without specifying a default. This is because the database needs something to populate existing rows.
+Please select a fix:
+ 1) Provide a one-off default now (will be set on all existing rows with a null value for this column)
+ 2) Quit and manually define a default value in models.py.
+Select an option: 1------------------------------------
+Please enter the default value as valid Python.
+The datetime and django.utils.timezone modules are available, so it is possible to provide e.g. timezone.now as a value.
+Type 'exit' to exit this prompt
+>>> 1------------------------------------------
+Migrations for 'todoapp':
+  todoapp\migrations\0003_alter_product_managers_product_uid.py
+    - Change managers on product
+    - Add field uid to product
+
+1 is some default value which won't be affecting our uid.
+
+(env) PS C:\Users\itvedant\Documents\Django\todo> python manage.py migrate
+System check identified some issues:
+
+WARNINGS:
+?: (mysql.W002) MariaDB Strict Mode is not set for database connection 'default'
+        HINT: MariaDB's Strict Mode fixes many data integrity problems in MariaDB, such as data truncation upon insertion, by escalating warnings into errors. It is strongly recommended you activate it. See: https://docs.djangoproject.com/en/4.2/ref/databases/#mysql-sql-mode
+Operations to perform:
+  Apply all migrations: admin, auth, contenttypes, sessions, todoapp
+Running migrations:
+  Applying todoapp.0003_alter_product_managers_product_uid... OK
+
+Now goto the backend and refresh-- u will get uid.
+
+clear django_session too frombackend.-- just click clearall.--delete
+
+Now,if any seller or user inserts a record,then uid also goes with 
+that record. ANd when he fetch the records,then those records 
+who islogged in ,his records will be fetchd.
+
+Sohow to filter this..so first we will enter diff diff user records.
+django_session is the table, where this detailis stored in the formof
+key and value pair. This info gets deletedas the userlogs out from his account
+and for this we need logout function.
+Till then we will clearour sessions by backend.
+
+
+views.py-- dash_product is used to fetch  products.
+and insert reocrds.Now,we want id of user to be inserted too.
+
+so we will fetch id of the user in dash_product
+
+this user_id is assigned when the user logs in.
+
+def dash_product(request):
+    user_id=request.user.id #vto fetch id of the logged in user.----------
+    print(user_id)
+    if request.method=="POST":
+        # retrieve data sent from form into python variable and store in database.
+        pname=request.POST["pname"]
+        desc=request.POST["pdesc"]
+        price=request.POST["pprice"]
+        cat=request.POST["cat"]
+        #print(pname,desc,price,cat)
+        p1=Product.objects.create(name=pname,pdesc=desc,price=price,cat=cat,is_deleted="N",uid=user_id)---------
+        print(p1)
+        p1.save()
+        return redirect("/pdashboard")
+
+http://127.0.0.1:8000/login
+
+un-- firstuser123
+pwd--Pa$$word@20
+
+we got dashboard with empty table.
+
+Now,if i willclick add product,id of the user is printed in terminal and we are getting error regarding objects.
+
+Inmodel.py we have done obj1.So 
+
+price=request.POST["pprice"]
+        cat=request.POST["cat"]
+        #print(pname,desc,price,cat)
+        p1=Product.obj1.create(name=pname,pdesc=desc,price=price,cat=cat,is_deleted="N",uid=user_id)---obj1 
+        print(p1)
+        p1.save()
+        return redirect("/pdashboard")
+
+
+Save all and run again.
+
+just check if the data is saved in the database. Not saved.
+
+http://127.0.0.1:8000/pdashboard--- adding the product name after clicking add product u can see product list
+in the dashboard.
+
+Now in the backend we need to check uid. So refresh and updated uid is added.
+This means this product belongs to the uid 2.
+
+add clothes category info.
+
+So refresh and updated uid is added.
+This means this product belongs to the uid 2.
+
+Now seeing session-- now yesterday we were starting setsession function to start the session,today after login only
+session started and assigned.This is because of login function.
+
+Now we will login with another user.
+
+note-- currently we will see products in diff users too. We stillhave to put that logic.
+
+http://127.0.0.1:8000/login--
+
+fifthuser
+redhat123@
+
+in terminal we got the id of the user.
+
+nowwe will add product from this dashboard.
+
+saffola oil info. 
+
+view.py---- dash_product----
+else part-- # select * from todoapp_product where uid=user_id and is_deleted="N";
+
+    p1=Product.obj1.create(name=pname,pdesc=desc,price=price,cat=cat,is_deleted="N",uid=user_id)
+        print(p1)
+        p1.save()
+        return redirect("/pdashboard")
+    else:
+        #show empty form
+        #records=Product.objects.all()
+        q1=Q(uid=user_id)--------------------------------
+        q2=Q(is_deleted="N")---------------------------------
+        records=Product.obj1.filter(q1 & q2)--------------------------
+        #print(records)
+        content={}
+        content['data']=records
+
+
+save all and login with first user,then--- u will see only the info addedby firstuser123.
+
+Now we willcreate logout button of the dashboard.
+
+So,inproduct_dashboard.html----------------
+
+&nbsp-- non breaking product space
+
+<div class="col-md-12 mt-5">
+  <h3> <span class="text-danger">Product Admin Panel</span>
+    &nbsp;&nbsp;&nbsp;
+    <span><button class=" btn btn-danger text-white">Logout</button></span>
+  </h3>
+  <hr>
+</div>
+
+<div class="col-md-3 mt-5">
+
+now we will create anchor tag for logout button.
+
+<span><a href="logout"><button class=" btn btn-danger text-white">Logout</button></a></span>----
+
+http://127.0.0.1:8000/pdashboard---- click logout button-- erroris there.
+
+Now,just like login,there is a logout process to destroy session and to get redirected to some page.
+
+now, we will write url for logout.
+
+urls.py
+
+    path("getsession",views.getsession),
+    path("logout",views.user_logout),
+]
+
+simply logout is an internal func. Dnot use internal func name .
+
+Now going to views.py---
+
+def user_logout(request):
+    logout(request)
+    return redirect("/login")
+
+save all -- refresh page---
+
+logout--- we got login page.
+
+try with fifth user.
+
+u can even give register url instead of login.
+
+if u will notice,scroll up and see-- 
+from django.contrib.auth import authenticate,login,logout
+
+logout we have included from auth.
+
+middleware-----
+
+It is used to validate or check something. In settings.py u can see middleware.
+
+eg. csrf token is checked by csrf middleware.
+
+there are many middlewares like session middleware,csrf middleware- it does token authentication.
+
+So,we can say,middleware is a code between req and response.
+
+this middleware is called as a plugin service.
+
+If uwant to add a middleware,add it in the list of middleware.
+
+2types of middleware are--
+built in and user defined middleware.
+
+steps--
+1.create file middleware.py in application folder.
+
+So inside todoapp--- create file-- middleware.py
+
+middleware-- 15:57
 
 
 
@@ -4295,7 +4617,16 @@ setsession.html--
  
 
 
+ 
 
+
+
+
+
+
+
+
+ 
 
 
 
