@@ -4611,10 +4611,108 @@ So inside todoapp--- create file-- middleware.py
 
 middleware-- 15:57
 
+'''
+def middlewarename(get_response):
+     #this isoptional--
+     need to write code which u want only 1 time to be executed. for eg initializtion or configurationof middlware
 
+     def your_function(request):
+        code to be executed before view func is called.
+        var=get_response(request)
+        code to be executed after view func is called.
+
+        return response
+
+     return your_function
+
+this is a gneric structure for which we will write a code.
+
+'''
+
+def todo_middleware(get_response):
+    print("code to be executed only once for initialization")
+    def todo_function(request):
+        print("code to be executed before view func is called.")
+        res=get_response(request)
+        print("code to be executed after view func is called.")
+        return res
+    return todo_function
+
+
+Now, when we give the request of any type likelogin request,
+0r127.0.0.8000, that will be passed through this middleware.
+Now,this middleware function wil be called when our req is triggered.
+
+So the call to todo_middleware func happens when a req is sent.
+
+the call to todo_function() happens internally
+with the help of a callable todo_function. this is called
+callable becuse before returning it is calling a todo_function.
+
+Now,the in_built get response funct, gets a get request.
+where the rquest is /login.
+
+Now,/login related func in views.py is user_login().
+So, get_response is going to call with /login request, user_login()
+Now, since its a get request, from the else part of user_login(),
+something isgetting returned by get request.
+Return i.e.some response is returned to the middleware,
+i.e. get_response, and the response will be stored in the variable res.
+
+So lets say in views.py-->user_login()-->else part-->
+before return ,lets say we will print--
+print("In user_login else part")
+i.e.
+
+else:
+        lfm=AuthenticationForm()
+        print("In user_login else part")
+        return render(request,"login.html",{'lform':lfm})
+
+
+Now registering this middleware in settings.py--
+
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'todoapp.middleware.todo_middleware',
+]
+
+
+http://127.0.0.1:8000/login----
+
+Now this middleware can be procedure oriented or object oriented .
+
+soin middleware.py comment the func code.
+
+'''
+def todo_middleware(get_response):
+    print("code to be executed only once for initialization.Thi o/p we will see on terminal")
+    def todo_function(request):
+        print("code to be executed before view func is called.")
+        res=get_response(request)
+        print("code to be executed after view func is called.")
+        return res
+    return todo_function
+'''
+
+
+
+
+class todo_middleware:
+    def __init__(self,get_response):
+        self.get_response=get_response
+        print("class based middleware code to be executed only once for initialization.Thi o/p we will see on terminal")
+
+    def __call__(self,request):
+        print("code to be executed before view func is called.")
+        res=self.get_response(request)
+        print("code to be executed after view func is called.")
+        return res
 
 
  
+
+just refresh http://127.0.0.1:8000/login and see th o/p in terminal.
 
 
  
